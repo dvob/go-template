@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"text/template"
 
+	"github.com/Masterminds/sprig/v3"
 	"gopkg.in/yaml.v3"
 )
 
@@ -30,8 +31,10 @@ func run() error {
 	flag.Parse()
 
 	if flag.NArg() != 1 {
-		return fmt.Errorf("usage: %s [-d data.json] [-f (json|yaml)] template.tmpl [templateN]", os.Args[0])
+		return fmt.Errorf("usage: %s [-d data.json] [-f (json|yaml)] TEMPLATE-FILE", os.Args[0])
 	}
+
+	templateFile := flag.Arg(0)
 
 	var (
 		data map[string]any
@@ -44,7 +47,12 @@ func run() error {
 		}
 	}
 
-	tmpl, err := template.ParseFiles(flag.Args()...)
+	rawTemplate, err := os.ReadFile(templateFile)
+	if err != nil {
+		return fmt.Errorf("error reading template file: %w", err)
+	}
+
+	tmpl, err := template.New("").Funcs(sprig.FuncMap()).Parse(string(rawTemplate))
 	if err != nil {
 		return fmt.Errorf("error parsing template: %w", err)
 	}
